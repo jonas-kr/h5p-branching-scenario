@@ -81,6 +81,8 @@ H5P.BranchingScenario.LibraryScreen = (function () {
    * @return {HTMLElement} Wrapping div
    */
   LibraryScreen.prototype.createWrapper = function (courseTitle, libraryTitle, showLibraryTitle) {
+    const self = this;
+    const parent = this.parent;
     const wrapper = document.createElement('div');
 
     const titleDiv = document.createElement('div');
@@ -115,11 +117,17 @@ H5P.BranchingScenario.LibraryScreen = (function () {
 
     const buttonWrapper = document.createElement('div');
     buttonWrapper.classList.add('h5p-nav-button-wrapper');
+
+    // Append back button if at least one node has it enabled
+    if (parent.backwardsAllowedFlags.indexOf(true) !== -1) {
+      this.backButton = this.createBackButton(parent.params.l10n.backButtonText);
+      buttonWrapper.appendChild(this.backButton);
+    }
+
+    // Proceed button
     const navButton = document.createElement('button');
     navButton.classList.add('transition');
 
-    const self = this;
-    const parent = this.parent;
     navButton.onclick = function () {
       // Stop impatient users from breaking the view
       if (parent.navigating === false) {
@@ -227,6 +235,42 @@ H5P.BranchingScenario.LibraryScreen = (function () {
     });
 
     return wrapper;
+  };
+
+  /**
+   * Append back button.
+   * @param {string} label Button label.
+   * @return {HTMLElement} Back button.
+   */
+  LibraryScreen.prototype.createBackButton = function (label) {
+    const self = this;
+
+    const backButton = document.createElement('button');
+    backButton.classList.add('transition');
+    backButton.classList.add('h5p-back-button');
+
+    // No need to enable if first node is Branching Question
+    if (this.parent.params.content.length > 0 && this.parent.params.content[0].type.library !== 'H5P.BranchingQuestion') {
+      backButton.classList.add('h5p-disabled');
+      backButton.setAttribute('disabled', true);
+    }
+
+    // Navigation
+    backButton.addEventListener('click', () => {
+      // Stop impatient users from breaking the view
+      if (self.parent.navigating === true) {
+        return;
+      }
+
+      self.parent.trigger('navigated', {
+        reverse: true
+      });
+      self.parent.navigating = true;
+    });
+
+    backButton.appendChild(document.createTextNode(label));
+
+    return backButton;
   };
 
   LibraryScreen.prototype.createFeedbackScreen = function (feedback, nextContentId) {
@@ -571,7 +615,7 @@ H5P.BranchingScenario.LibraryScreen = (function () {
     for (let i = 0; i < nextLibraryElements.length; i++) {
       nextLibraryElements[i].parentNode.removeChild(nextLibraryElements[i]);
     }
-  }
+  };
 
   /**
    * Remove custom fullscreen buttons from sub content.
@@ -680,6 +724,8 @@ H5P.BranchingScenario.LibraryScreen = (function () {
       self.wrapper.classList.remove('h5p-current-screen');
       self.wrapper.classList.add('h5p-next-screen');
       self.wrapper.classList.remove('h5p-slide-out');
+      self.wrapper.classList.remove('h5p-slide-out-reverse');
+      self.wrapper.classList.remove('h5p-slide-pseudo');
       setTimeout(() => {
         if (self.wrapper.parentNode !== null) {
           self.wrapper.parentNode.removeChild(self.wrapper);
@@ -757,19 +803,29 @@ H5P.BranchingScenario.LibraryScreen = (function () {
    * @param  {Object} library Library data
    * @return {undefined}
    */
-  LibraryScreen.prototype.showNextLibrary = function (library) {
+  LibraryScreen.prototype.showNextLibrary = function (library, reverse = false) {
     this.nextLibraryId = library.nextContentId;
     this.libraryFeedback = library.feedback;
 
     // Show normal h5p library
-    if (library.type.library.split(' ')[0] !== 'H5P.BranchingQuestion') {
+    if (!LibraryScreen.isBranching(library)) {
       // Update the title
       const contentTitle = (library.type && library.type.metadata && library.type.metadata.title ? library.type.metadata.title : '');
       this.libraryTitle.setAttribute('aria-label', contentTitle ? contentTitle : 'Untitled Content');
       this.libraryTitle.innerHTML = (library.showContentTitle && contentTitle ? contentTitle : '&nbsp;');
 
-      // Slide out the current library
-      this.currentLibraryWrapper.classList.add('h5p-slide-out');
+      if (this.currentLibraryId === library.contentId) {
+        // Target slide is already being displayed
+        this.currentLibraryWrapper.classList.add('h5p-slide-pseudo');
+      }
+      else if (reverse) {
+        // Slide out the current library in reverse direction
+        this.currentLibraryWrapper.classList.add('h5p-slide-out-reverse');
+      }
+      else {
+        // Slide out the current library
+        this.currentLibraryWrapper.classList.add('h5p-slide-out');
+      }
 
       // Remove the branching questions if they exist
       if (this.overlay) {
@@ -786,7 +842,6 @@ H5P.BranchingScenario.LibraryScreen = (function () {
         this.showBackgroundToReadspeaker();
       }
 
-
       // Initialize library if necessary
       if (!this.nextLibraries[library.contentId]) {
         this.createNextLibrary(library);
@@ -797,6 +852,13 @@ H5P.BranchingScenario.LibraryScreen = (function () {
       if (!libraryWrapper.offsetParent) {
         this.wrapper.appendChild(libraryWrapper);
       }
+
+      // Move next library left of current library if sliding backwards
+      if (reverse) {
+        libraryWrapper.classList.remove('h5p-next');
+        libraryWrapper.classList.add('h5p-previous');
+      }
+
       libraryWrapper.classList.add('h5p-slide-in');
       const libraryElement = libraryWrapper.getElementsByClassName('h5p-branching-scenario-content')[0];
       libraryElement.classList.remove('h5p-branching-hidden');
@@ -813,6 +875,7 @@ H5P.BranchingScenario.LibraryScreen = (function () {
           self.currentLibraryWrapper.parentNode.removeChild(self.currentLibraryWrapper);
         }
         self.currentLibraryWrapper = libraryWrapper;
+        self.currentLibraryWrapper.classList.remove('h5p-previous');
         self.currentLibraryWrapper.classList.remove('h5p-next');
         self.currentLibraryWrapper.classList.remove('h5p-slide-in');
         self.currentLibraryElement = libraryWrapper.getElementsByClassName('h5p-branching-scenario-content')[0]; // TODO: Why no use 'libraryElement' ?

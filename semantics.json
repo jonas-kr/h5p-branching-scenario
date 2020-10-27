@@ -109,7 +109,7 @@
               "type": "library",
               "importance": "high",
               "options": [
-                "H5P.BranchingQuestion 1.0",
+                "H5P.BranchingQuestion 1.1",
                 "H5P.CoursePresentation 1.22",
                 "H5P.AdvancedText 1.1",
                 "H5P.Image 1.1",
@@ -171,6 +171,21 @@
                   "optional": true
                 }
               ]
+            },
+            {
+              "name": "contentBehaviour",
+              "type": "group",
+              "label": "Behavioural settings",
+              "fields": [
+                {
+                  "name": "enableBackwardsNavigation",
+                  "description": "This option determines if the \"Back\" button will be enabled for this content.",
+                  "type": "boolean",
+                  "label": "Enable backwards navigation",
+                  "optional": true,
+                  "default": false
+                }
+              ]
             }
           ]
         }
@@ -205,6 +220,36 @@
         ]
       },
       {
+        "name": "behaviour",
+        "type": "group",
+        "label": "Behavioural settings",
+        "importance": "low",
+        "fields": [
+          {
+            "name": "overrideBackwardsNavigation",
+            "type": "select",
+            "label": "Override backwards navigation",
+            "description": "Override the individual settings for enabling backwards navigation",
+            "optional": "true",
+            "options": [
+              {
+                "value": "individual",
+                "label": "Use individual content settings"
+              },
+              {
+                "value": "allBackwards",
+                "label": "Enable backwards navigation for all contents"
+              },
+              {
+                "value": "noneBackwards",
+                "label": "Disable backwards navigation for all contents"
+              }
+            ],
+            "default": "individual"
+          }
+        ]
+      },
+      {
         "name": "l10n",
         "type": "group",
         "label": "Localization",
@@ -224,6 +269,13 @@
             "type": "text",
             "importance": "low",
             "default": "Restart the course"
+          },
+          {
+            "name": "backButtonText",
+            "label": "Text for the back button on each of the library screens and branching questions",
+            "type": "text",
+            "importance": "low",
+            "default": "Back"
           },
           {
             "name": "proceedButtonText",

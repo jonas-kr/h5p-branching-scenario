@@ -38,6 +38,12 @@
   overflow: hidden;
 }
 
+.h5p-branching-scenario .h5p-screen-header .h5p-back-button:before {
+  font-family: 'H5PFontAwesome4';
+  content: "\f100";
+  padding-right: 10px;
+}
+
 .h5p-branching-scenario .h5p-screen-header .h5p-nav-button:after {
   font-family: 'H5PFontAwesome4';
   content: "\f101";
@@ -46,10 +52,11 @@
 
 .h5p-branching-scenario .h5p-nav-button-wrapper {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
 }
 
+.h5p-branching-scenario .h5p-back-button,
 .h5p-branching-scenario .h5p-nav-button {
   margin-right: 20px;
   margin-left: 0;
@@ -87,14 +94,35 @@
   box-sizing: border-box;
 }
 
+.h5p-branching-scenario .h5p-previous {
+  transform: translateX(-100%);
+  -webkit-transform: translateX(-100%);
+}
+
 .h5p-branching-scenario .h5p-next {
   transform: translateX(100%);
   -webkit-transform: translateX(100%);
 }
 
+.h5p-branching-scenario .h5p-library-wrapper.h5p-slide-pseudo {
+  animation: slide-pseudo 0s forwards;
+  -webkit-animation: slide-pseudo 0s forwards;
+}
+
 .h5p-branching-scenario .h5p-library-wrapper.h5p-slide-out {
   animation: slide-out 0.8s forwards;
   -webkit-animation: slide-out 0.8s forwards;
+  position: absolute;
+  top: 3.8em;
+  left: 0;
+  height: calc(100% - 7em);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.h5p-branching-scenario .h5p-library-wrapper.h5p-slide-out-reverse {
+  animation: slide-out-reverse 0.8s forwards;
+  -webkit-animation: slide-out-reverse 0.8s forwards;
   position: absolute;
   top: 3.8em;
   left: 0;

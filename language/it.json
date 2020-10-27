@@ -76,6 +76,15 @@
                     "description": "Il punteggio sarà inviato a ogni LMS, LRS o a ogni altro servizio collegato che riceva punteggi da H5P per utenti che raggiungano lo scenario finale predefinito"
                   }
                 ]
+              },
+              {
+                "label": "Impostazioni esecuzione",
+                "fields": [
+                  {
+                    "description": "This option determines if the \"Back\" button will be enabled for this content.",
+                    "label": "Enable backwards navigation"
+                  }
+                ]
               }
             ]
           }
@@ -101,6 +110,26 @@
           ]
         },
         {
+          "label": "Impostazioni esecuzione",
+          "fields": [
+            {
+              "label": "Override backwards navigation",
+              "description": "Override the individual settings for enabling backwards navigation",
+              "options": [
+                {
+                  "label": "Use individual content settings"
+                },
+                {
+                  "label": "Enable backwards navigation for all contents"
+                },
+                {
+                  "label": "Disable backwards navigation for all contents"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "label": "Localizzazione",
           "fields": [
             {
@@ -110,6 +139,10 @@
             {
               "label": "Testo per il pulsante sulla schermata finale",
               "default": "Riavvia il corso"
+            },
+            {
+              "label": "Text for the back button on each of the library screens and branching questions",
+              "default": "Back"
             },
             {
               "label": "Testo per il pulsante su ognuna delle schermate della libreria",

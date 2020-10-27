@@ -12,6 +12,8 @@ H5P.BranchingScenario = function (params, contentId) {
   self.currentHeight;
   self.currentId = -1;
   self.xAPIDataCollector = [];
+  self.userPath = [];
+  self.backwardsAllowedFlags = [];
 
   /**
    * Extend an array just like JQuery's extend.
@@ -49,6 +51,7 @@ H5P.BranchingScenario = function (params, contentId) {
       }
     ],
     scoringOption: 'no-score',
+    behaviour: 'individual',
     l10n: {}
   }, params.branchingScenario); // Account for the wrapper!
 
@@ -57,7 +60,8 @@ H5P.BranchingScenario = function (params, contentId) {
     startScreenButtonText: "Start the course",
     endScreenButtonText: "Restart the course",
     proceedButtonText: "Proceed",
-    scoreText: "Your score:"
+    scoreText: "Your score:",
+    backButtonText: "Back"
   }, params.l10n);
 
   // Sanitize the (next)ContentIds that the editor didn't set
@@ -66,6 +70,15 @@ H5P.BranchingScenario = function (params, contentId) {
     if (item.nextContentId === undefined) {
       item.nextContentId = -1;
     }
+  });
+
+  // Compute pattern for enabling/disabling back button
+  self.backwardsAllowedFlags = params.content.map( content => {
+    if (params.behaviour === 'individual') {
+      return content.contentBehaviour || false;
+    }
+
+    return params.behaviour === 'allBackwards';
   });
 
   self.params = params;
@@ -156,6 +169,7 @@ H5P.BranchingScenario = function (params, contentId) {
       self.startScreen.hide();
       self.libraryScreen.show();
       self.triggerXAPI('progressed');
+      self.userPath.push(0);
     }
     self.currentId = 0;
   });
@@ -164,7 +178,25 @@ H5P.BranchingScenario = function (params, contentId) {
    * Handle progression
    */
   self.on('navigated', function (e) {
+    // Trace back user steps
+    if (e.data.reverse) {
+      self.userPath.pop();
+      e.data.nextContentId = self.userPath.pop() || 0;
+    }
+
     const id = parseInt(e.data.nextContentId);
+
+    // Keep track of user steps
+    self.userPath.push(id);
+
+    // Disable back button if no node to go back to or not allowed
+    if (self.canEnableBackButton(id) === false || self.userPath.length === 1) {
+      self.disableBackButton();
+    }
+    else {
+      self.enableBackButton();
+    }
+
     const nextLibrary = self.getLibrary(id);
     let resizeScreen = true;
 
@@ -259,7 +291,7 @@ H5P.BranchingScenario = function (params, contentId) {
       self.triggerXAPICompleted(self.scoring.getScore(self.currentEndScreen.getScore()), self.scoring.getMaxScore());
     }
     else {
-      self.libraryScreen.showNextLibrary(nextLibrary);
+      self.libraryScreen.showNextLibrary(nextLibrary, e.data.reverse);
       self.currentId = id;
     }
 
@@ -288,6 +320,7 @@ H5P.BranchingScenario = function (params, contentId) {
     self.startScreen.screenWrapper.classList.remove('h5p-slide-out');
     self.startScreen.show();
     self.currentId = -1;
+    self.userPath = [];
 
     // Reset the library screen
     if (self.libraryScreen) {
@@ -360,7 +393,7 @@ H5P.BranchingScenario = function (params, contentId) {
     return H5P.isFullscreen
       || (self.$container
         && self.$container[0].classList.contains('h5p-fullscreen'))
-      ||(self.$container
+      || (self.$container
         && self.$container[0].classList.contains('h5p-semi-fullscreen'));
   };
 
@@ -395,6 +428,53 @@ H5P.BranchingScenario = function (params, contentId) {
     else {
       self.$container[0].classList.add('h5p-mobile-screen');
     }
+  };
+
+  /**
+   * Disable back button.
+   */
+  self.disableBackButton = function () {
+    if (!self.libraryScreen || !self.libraryScreen.backButton) {
+      return;
+    }
+    self.libraryScreen.backButton.classList.add('h5p-disabled');
+    self.libraryScreen.backButton.setAttribute('disabled', true);
+  };
+
+  /**
+   * Enable back button.
+   */
+  self.enableBackButton = function () {
+    if (!self.libraryScreen || !self.libraryScreen.backButton) {
+      return;
+    }
+    self.libraryScreen.backButton.classList.remove('h5p-disabled');
+    self.libraryScreen.backButton.removeAttribute('disabled');
+  };
+
+  /**
+   * Get user path.
+   * @return {object[]} User path.
+   */
+  self.getUserPath = function () {
+    return self.userPath;
+  };
+
+  /**
+   * Check if a node is allowed to have the back button enabled.
+   * @param {number} id Id of node to check.
+   * @return {boolean} True if node is allowed to have the back button enabled, else false.
+   */
+  self.canEnableBackButton = function (id) {
+    if (typeof id !== 'number') {
+      return false;
+    }
+
+    if (id < 0 || id > self.backwardsAllowedFlags.length - 1) {
+      return false;
+    }
+
+    return self.backwardsAllowedFlags[id];
   };
 
   /**
@@ -443,7 +523,7 @@ H5P.BranchingScenario = function (params, contentId) {
    */
   self.getXAPIData = function () {
     if (!self.currentEndScreen) {
-      console.error('Called getXAPIData before finished.')
+      console.error('Called getXAPIData before finished.');
       return;
     }
 
